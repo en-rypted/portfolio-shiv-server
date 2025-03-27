@@ -7,6 +7,7 @@ require("dotenv").config();
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+const port = process.env.PORT;
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -34,6 +35,6 @@ app.post("/send-email", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
