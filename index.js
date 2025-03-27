@@ -18,13 +18,13 @@ const transporter = nodemailer.createTransport({
 });
 
 app.post("/send-email", async (req, res) => {
-  const { name, email, message } = req.body;
+  const { name, email,contact,message } = req.body;
 
   const mailOptions = {
     from: email,
     to: process.env.EMAIL, // Your email
     subject: `New Contact Message from ${name}`,
-    text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+    text: `Name: ${name}\nEmail: ${email}\nContact No: ${contact}\nMessage: ${message}`,
   };
 
   try {
