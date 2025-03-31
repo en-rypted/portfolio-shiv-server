@@ -3,9 +3,21 @@ const nodemailer = require("nodemailer");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 require("dotenv").config();
+const allowedOrigins = [
+  "https://shiv-portfolio-47ce9.web.app",
+  "http://localhost:5173", // For local development
+];
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    console.log(origin)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },}));
 app.use(bodyParser.json());
 const port = process.env.PORT;
 
