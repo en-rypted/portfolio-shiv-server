@@ -1,18 +1,7 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
-const bodyParser = require("body-parser");
-const csrfRouter = require('./routes/csrfRoute');
-const csrf = require('./config/csrfConfig')
-const session = require('express-session')
-const fs = require('fs');
-const https = require('https');
 const contactLimiter = require('./middleware/contactLimiter');
-
-const privateKey = fs.readFileSync('../certs/server.key', 'utf8');
-const certificate = fs.readFileSync('../certs/server.cert', 'utf8');
-const credentials = { key: privateKey, cert: certificate };
-
 const cookieParser = require("cookie-parser");
 const { emailTemplate } = require("./assets/emailTemplate");
 require("dotenv").config();
@@ -35,14 +24,12 @@ app.use(cors({
   credentials: true 
 }));
 app.use(express.json());
-// app.use(session({
-//   secret: 'keyboard cat'
-// }))
+
  app.use(cookieParser());
-// app.use(bodyParser.json());
+
 const port = process.env.PORT;
 
-//app.use('/csrf',csrfRouter);
+
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -83,7 +70,3 @@ app.post("/send-email", contactLimiter, async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-
-// https.createServer(credentials, app).listen(port, () => {
-//   console.log(`HTTPS Server running on https://localhost:${port}`);
-// });
