@@ -2,11 +2,25 @@ const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const csrfRouter = require('./routes/csrfRoute');
+const csrf = require('./config/csrfConfig')
+const session = require('express-session')
+const fs = require('fs');
+const https = require('https');
+const contactLimiter = require('./middleware/contactLimiter');
+
+const privateKey = fs.readFileSync('../certs/server.key', 'utf8');
+const certificate = fs.readFileSync('../certs/server.cert', 'utf8');
+const credentials = { key: privateKey, cert: certificate };
+
+const cookieParser = require("cookie-parser");
+const { emailTemplate } = require("./assets/emailTemplate");
 require("dotenv").config();
 const allowedOrigins = [
   "https://shiv-portfolio-47ce9.web.app",
   "http://localhost:5173", // For local development
 ];
+
 
 const app = express();
 app.use(cors({
@@ -17,9 +31,18 @@ app.use(cors({
     } else {
       callback(new Error("Not allowed by CORS"));
     }
-  },}));
-app.use(bodyParser.json());
+  },
+  credentials: true 
+}));
+app.use(express.json());
+// app.use(session({
+//   secret: 'keyboard cat'
+// }))
+ app.use(cookieParser());
+// app.use(bodyParser.json());
 const port = process.env.PORT;
+
+//app.use('/csrf',csrfRouter);
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -29,9 +52,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.post("/send-email", async (req, res) => {
-  const { name, email,contact,message } = req.body;
-
+app.post("/send-email", contactLimiter, async (req, res) => {
+  const { name, email, contact, message } = req.body;
+  
+  // Email to yourself
   const mailOptions = {
     from: email,
     to: process.env.EMAIL, // Your email
@@ -39,8 +63,17 @@ app.post("/send-email", async (req, res) => {
     text: `Name: ${name}\nEmail: ${email}\nContact No: ${contact}\nMessage: ${message}`,
   };
 
+  // Thank you email to the user
+  const userMailOptions = {
+    from: process.env.EMAIL, // Your email
+    to: email, // User's email
+    subject: "Thanks for contacting me!",
+    html: emailTemplate(name),
+  };
+
   try {
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions); // Send to yourself
+    await transporter.sendMail(userMailOptions); // Send to user
     res.status(200).json({ success: true, message: "Email sent successfully!" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -50,3 +83,7 @@ app.post("/send-email", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+// https.createServer(credentials, app).listen(port, () => {
+//   console.log(`HTTPS Server running on https://localhost:${port}`);
+// });
